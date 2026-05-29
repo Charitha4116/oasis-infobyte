@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alex Rivera — Portfolio</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Reset & Variables ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:      #1a1a2e;
+      --paper:    #f7f4ef;
+      --cream:    #ede8df;
+      --accent:   #c9602a;
+      --accent2:  #4a7c6f;
+      --muted:    #7a7062;
+      --serif:    'DM Serif Display', Georgia, serif;
+      --sans:     'DM Sans', sans-serif;
+      --radius:   12px;
+      --shadow:   0 4px 24px rgba(26,26,46,.10);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(247,244,239,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--cream);
+      padding: 0 5%;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      color: var(--ink);
+      text-decoration: none;
+      letter-spacing: -.01em;
+    }
+    .nav-links { display: flex; gap: 28px; list-style: none; }
+    .nav-links a {
+      text-decoration: none;
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 90vh;
+      display: flex; align-items: center;
+      padding: 80px 5% 60px;
+      background: var(--paper);
+      position: relative;
+      overflow: hidden;
+    }
+    #hero::before {
+      content: '';
+      position: absolute; top: -80px; right: -80px;
+      width: 480px; height: 480px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #c9602a22 0%, transparent 70%);
+      pointer-events: none;
+    }
+    #hero::after {
+      content: '';
+      position: absolute; bottom: -60px; left: 10%;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #4a7c6f18 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      display: flex; align-items: center; gap: 64px;
+      flex-wrap: wrap;
+    }
+    .hero-text { flex: 1 1 340px; }
+    .hero-badge {
+      display: inline-block;
+      font-size: .78rem; font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent);
+      background: #c9602a14;
+      padding: 4px 14px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+    .hero-name {
+      font-family: var(--serif);
+      font-size: clamp(2.6rem, 6vw, 4.2rem);
+      line-height: 1.1;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .hero-title {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(1.2rem, 3vw, 1.7rem);
+      color: var(--accent2);
+      margin-bottom: 24px;
+    }
+    .hero-intro {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 460px;
+      margin-bottom: 36px;
+    }
+    .btn-group { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: .9rem; font-weight: 600;
+      text-decoration: none;
+      transition: transform .18s, box-shadow .18s, background .18s;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 4px 16px rgba(201,96,42,.28);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,96,42,.38); }
+    .btn-outline {
+      border: 2px solid var(--ink);
+      color: var(--ink);
+      background: transparent;
+    }
+    .btn-outline:hover { background: var(--ink); color: var(--paper); transform: translateY(-2px); }
+
+    .hero-image-wrap {
+      flex: 0 0 260px;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .avatar-ring {
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      border: 4px solid var(--cream);
+      box-shadow: 0 12px 48px rgba(26,26,46,.14);
+      overflow: hidden;
+      background: var(--cream);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    /* SVG placeholder avatar */
+    .avatar-ring svg { width: 100%; height: 100%; }
+
+    /* ── SECTION SHARED ── */
+    section { padding: 80px 5%; }
+    .section-inner { max-width: 960px; margin: 0 auto; }
+    .section-label {
+      font-size: .78rem; font-weight: 600;
+      letter-spacing: .14em; text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(1.9rem, 4vw, 2.8rem);
+      color: var(--ink);
+      margin-bottom: 40px;
+      line-height: 1.15;
+    }
+
+    /* ── ABOUT ── */
+    #about { background: var(--cream); }
+    .about-grid {
+      display: flex; gap: 48px; flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .about-text { flex: 1 1 320px; }
+    .about-text p {
+      font-size: 1.05rem; color: #3d3a35;
+      margin-bottom: 16px;
+    }
+    .about-facts { flex: 0 1 260px; }
+    .fact-card {
+      background: var(--paper);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--accent);
+    }
+    .fact-card strong {
+      display: block; font-size: .8rem;
+      font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 4px;
+    }
+    .fact-card span { font-size: .97rem; color: var(--ink); font-weight: 500; }
+
+    /* ── SKILLS ── */
+    #skills { background: var(--paper); }
+    .skills-grid {
+      display: flex; flex-wrap: wrap; gap: 14px;
+    }
+    .skill-chip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1.5px solid var(--cream);
+      background: #fff;
+      font-size: .9rem; font-weight: 600; color: var(--ink);
+      box-shadow: 0 2px 8px rgba(26,26,46,.06);
+      transition: transform .18s, box-shadow .18s, border-color .18s;
+    }
+    .skill-chip:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(26,26,46,.12);
+      border-color: var(--accent);
+    }
+    .skill-chip .icon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .skill-chip .bar-wrap {
+      width: 60px; height: 5px;
+      background: var(--cream); border-radius: 3px;
+      overflow: hidden;
+    }
+    .skill-chip .bar { height: 100%; background: var(--accent2); border-radius: 3px; }
+
+    /* ── PROJECTS ── */
+    #projects { background: var(--cream); }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 24px;
+    }
+    .project-card {
+      background: var(--paper);
+      border-radius: var(--radius);
+      padding: 28px 28px 24px;
+      box-shadow: var(--shadow);
+      border: 1.5px solid transparent;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+      display: flex; flex-direction: column;
+    }
+    .project-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 40px rgba(26,26,46,.14);
+      border-color: var(--accent);
+    }
+    .project-tag {
+      font-size: .73rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--accent2);
+      background: #4a7c6f14;
+      padding: 3px 10px;
+      border-radius: 100px;
+      align-self: flex-start;
+      margin-bottom: 14px;
+    }
+    .project-title {
+      font-family: var(--serif);
+      font-size: 1.3rem;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+    .project-desc { font-size: .93rem; color: var(--muted); flex: 1; }
+    .project-link {
+      margin-top: 20px;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: .85rem; font-weight: 600;
+      color: var(--accent); text-decoration: none;
+      transition: gap .2s;
+    }
+    .project-link:hover { gap: 10px; }
+
+    /* ── CONTACT ── */
+    #contact { background: var(--ink); color: var(--paper); }
+    #contact .section-label { color: #c9602a; }
+    #contact .section-title { color: var(--paper); }
+    .contact-grid {
+      display: flex; gap: 32px; flex-wrap: wrap;
+    }
+    .contact-card {
+      flex: 1 1 200px;
+      background: rgba(255,255,255,.06);
+      border: 1.5px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .contact-card:hover {
+      background: rgba(255,255,255,.1);
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+    .contact-card .c-icon {
+      font-size: 1.4rem;
+      background: rgba(201,96,42,.22);
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .contact-card strong {
+      display: block;
+      font-size: .75rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: rgba(247,244,239,.5);
+    }
+    .contact-card a, .contact-card span {
+      font-size: 1rem; font-weight: 500; color: var(--paper);
+      text-decoration: none;
+    }
+    .contact-card a:hover { color: var(--accent); text-decoration: underline; }
+    .contact-note {
+      margin-top: 40px;
+      padding: 24px;
+      background: rgba(255,255,255,.05);
+      border-radius: var(--radius);
+      font-size: .95rem;
+      color: rgba(247,244,239,.6);
+      text-align: center;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #0f0f1a;
+      color: rgba(247,244,239,.4);
+      text-align: center;
+      padding: 24px 5%;
+      font-size: .84rem;
+    }
+    footer span { color: var(--accent); }
+
+    /* ── HAMBURGER / MOBILE NAV ── */
+    .hamburger {
+      display: none;
+      flex-direction: column; justify-content: center; gap: 5px;
+      background: none; border: none; cursor: pointer; padding: 4px;
+    }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--ink); border-radius: 2px;
+      transition: transform .3s, opacity .3s;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 700px) {
+      .nav-links { display: none; flex-direction: column; position: absolute;
+        top: 60px; left: 0; right: 0;
+        background: var(--paper);
+        border-bottom: 1px solid var(--cream);
+        padding: 16px 5%;
+        gap: 16px;
+      }
+      .nav-links.open { display: flex; }
+      .hamburger { display: flex; }
+      #hero { padding-top: 48px; text-align: center; }
+      .hero-inner { flex-direction: column-reverse; align-items: center; gap: 32px; }
+      .hero-intro { margin-left: auto; margin-right: auto; }
+      .btn-group { justify-content: center; }
+      .about-facts { width: 100%; }
+      nav { position: relative; }
+    }
+
+    /* ── SCROLL FADE-IN ── */
+    .fade-in { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+    .fade-in.visible { opacity: 1; transform: none; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#hero" class="nav-logo">Alex Rivera</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#about">About</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-inner">
+      <div class="hero-text fade-in">
+        <div class="hero-badge">Open to Work</div>
+        <h1 class="hero-name">Alex Rivera</h1>
+        <p class="hero-title">Web Developer &amp; CS Student</p>
+        <p class="hero-intro">
+          I build clean, user-friendly websites and enjoy turning ideas into
+          real products. Currently pursuing my B.Tech and growing every day.
+        </p>
+        <div class="btn-group">
+          <a href="#projects" class="btn btn-primary">View Projects</a>
+          <a href="#contact" class="btn btn-outline">Get in Touch</a>
+        </div>
+      </div>
+
+      <div class="hero-image-wrap fade-in">
+        <div class="avatar-ring">
+          <!-- Simple illustrated avatar using SVG -->
+          <svg viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="220" fill="#ede8df"/>
+            <!-- body -->
+            <ellipse cx="110" cy="190" rx="64" ry="38" fill="#4a7c6f"/>
+            <!-- neck -->
+            <rect x="96" y="130" width="28" height="26" rx="8" fill="#f2c4a0"/>
+            <!-- head -->
+            <ellipse cx="110" cy="110" rx="44" ry="48" fill="#f2c4a0"/>
+            <!-- hair -->
+            <ellipse cx="110" cy="76" rx="44" ry="26" fill="#3a2a1a"/>
+            <ellipse cx="68" cy="100" rx="12" ry="20" fill="#3a2a1a"/>
+            <ellipse cx="152" cy="100" rx="12" ry="20" fill="#3a2a1a"/>
+            <!-- eyes -->
+            <ellipse cx="95" cy="108" rx="6" ry="7" fill="#fff"/>
+            <ellipse cx="125" cy="108" rx="6" ry="7" fill="#fff"/>
+            <circle cx="96" cy="109" r="3.5" fill="#2a1a0a"/>
+            <circle cx="126" cy="109" r="3.5" fill="#2a1a0a"/>
+            <circle cx="97" cy="107.5" r="1.2" fill="#fff"/>
+            <circle cx="127" cy="107.5" r="1.2" fill="#fff"/>
+            <!-- nose -->
+            <ellipse cx="110" cy="120" rx="4" ry="3" fill="#e0a882"/>
+            <!-- smile -->
+            <path d="M99 130 Q110 140 121 130" stroke="#c97050" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="section-inner">
+      <div class="section-label fade-in">Who I Am</div>
+      <h2 class="section-title fade-in">About Me</h2>
+      <div class="about-grid">
+        <div class="about-text fade-in">
+          <p>
+            Hi! I'm Alex Rivera, a passionate and self-motivated Computer Science student based
+            in Vijayawada. I love building things for the web — from simple landing pages to
+            interactive applications. I believe in writing clean code and continuously improving
+            my craft.
+          </p>
+          <p>
+            I'm currently in my second year of B.Tech (Computer Science &amp; Engineering) and
+            exploring both frontend development and the fundamentals of programming. When I'm
+            not coding, I enjoy reading tech blogs and solving logic puzzles.
+          </p>
+          <p>
+            My goal is to land my first internship by the end of the year and eventually build
+            products that solve real-world problems for everyday people.
+          </p>
+        </div>
+        <div class="about-facts fade-in">
+          <div class="fact-card">
+            <strong>Education</strong>
+            <span>B.Tech — Computer Science &amp; Engineering</span>
+          </div>
+          <div class="fact-card">
+            <strong>Location</strong>
+            <span>Vijayawada, Andhra Pradesh</span>
+          </div>
+          <div class="fact-card">
+            <strong>Year</strong>
+            <span>2nd Year (2023 – 2027)</span>
+          </div>
+          <div class="fact-card">
+            <strong>Currently Learning</strong>
+            <span>JavaScript &amp; React</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="section-inner">
+      <div class="section-label fade-in">What I Know</div>
+      <h2 class="section-title fade-in">My Skills</h2>
+      <div class="skills-grid fade-in">
+
+        <div class="skill-chip">
+          <div class="icon" style="background:#fff4e6">🌐</div>
+          HTML5
+          <div class="bar-wrap"><div class="bar" style="width:90%"></div></div>
+        </div>
+
+        <div class="skill-chip">
+          <div class="icon" style="background:#e8f0ff">🎨</div>
+          CSS3
+          <div class="bar-wrap"><div class="bar" style="width:80%"></div></div>
+        </div>
+
+        <div class="skill-chip">
+          <div class="icon" style="background:#fffce6">⚡</div>
+          JavaScript
+          <div class="bar-wrap"><div class="bar" style="width:55%"></div></div>
+        </div>
+
+        <div class="skill-chip">
+          <div class="icon" style="background:#e6f2ec">🔷</div>
+          C Language
+          <div class="bar-wrap"><div class="bar" style="width:75%"></div></div>
+        </div>
+
+        <div class="skill-chip">
+          <div class="icon" style="background:#f0e6ff">🐍</div>
+          Python (Basic)
+          <div class="bar-wrap"><div class="bar" style="width:50%"></div></div>
+        </div>
+
+        <div class="skill-chip">
+          <div class="icon" style="background:#e6f7ff">🛢️</div>
+          SQL (Basic)
+          <div class="bar-wrap"><div class="bar" style="width:45%"></div></div>
+        </div>
+
+        <div class="skill-chip">
+          <div class="icon" style="background:#fff0e6">🐙</div>
+          Git &amp; GitHub
+          <div class="bar-wrap"><div class="bar" style="width:60%"></div></div>
+        </div>
+
+        <div class="skill-chip">
+          <div class="icon" style="background:#e6f2ec">📱</div>
+          Responsive Design
+          <div class="bar-wrap"><div class="bar" style="width:70%"></div></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="section-inner">
+      <div class="section-label fade-in">What I've Built</div>
+      <h2 class="section-title fade-in">Projects</h2>
+      <div class="projects-grid">
+
+        <div class="project-card fade-in">
+          <div class="project-tag">HTML · CSS</div>
+          <h3 class="project-title">Personal Portfolio Website</h3>
+          <p class="project-desc">
+            This very website! A clean and responsive portfolio built from scratch using only HTML
+            and CSS — no frameworks. Includes a hero section, skills, and project cards.
+          </p>
+          <a href="#" class="project-link">View Project →</a>
+        </div>
+
+        <div class="project-card fade-in">
+          <div class="project-tag">HTML · CSS · JavaScript</div>
+          <h3 class="project-title">To-Do List App</h3>
+          <p class="project-desc">
+            A simple browser-based to-do list that lets users add, check off, and delete tasks.
+            Data is stored in localStorage so tasks persist on refresh. My first JavaScript project!
+          </p>
+          <a href="#" class="project-link">View Project →</a>
+        </div>
+
+        <div class="project-card fade-in">
+          <div class="project-tag">C Language</div>
+          <h3 class="project-title">Student Grade Calculator</h3>
+          <p class="project-desc">
+            A command-line program written in C that takes subject marks as input, computes the
+            GPA, assigns a grade, and displays a formatted result card. Submitted as a college mini-project.
+          </p>
+          <a href="#" class="project-link">View Project →</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="section-inner">
+      <div class="section-label fade-in">Say Hello</div>
+      <h2 class="section-title fade-in">Get In Touch</h2>
+      <div class="contact-grid fade-in">
+
+        <div class="contact-card">
+          <div class="c-icon">📧</div>
+          <strong>Email</strong>
+          <a href="mailto:alex.rivera@email.com">alex.rivera@email.com</a>
+        </div>
+
+        <div class="contact-card">
+          <div class="c-icon">📱</div>
+          <strong>Phone</strong>
+          <span>+91 98765 43210</span>
+        </div>
+
+        <div class="contact-card">
+          <div class="c-icon">💼</div>
+          <strong>LinkedIn</strong>
+          <a href="#">linkedin.com/in/alexrivera</a>
+        </div>
+
+        <div class="contact-card">
+          <div class="c-icon">🐙</div>
+          <strong>GitHub</strong>
+          <a href="#">github.com/alexrivera</a>
+        </div>
+
+      </div>
+      <p class="contact-note fade-in">
+        I'm currently open to internship opportunities and freelance projects. Feel free to reach out — I'd love to connect!
+      </p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2026 <span>Alex Rivera</span>. Built with ❤️ using HTML &amp; CSS.</p>
+  </footer>
+
+  <!-- JS: hamburger + scroll fade-in -->
+  <script>
+    // Mobile nav toggle
+    const btn = document.getElementById('hamburger');
+    const links = document.getElementById('navLinks');
+    btn.addEventListener('click', () => links.classList.toggle('open'));
+    links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => links.classList.remove('open')));
+
+    // Scroll fade-in using IntersectionObserver
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
