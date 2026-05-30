@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CALCVLVS — Premium Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Mono:wght@300;400;500&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep:     #07090f;
+    --bg-mid:      #0d1117;
+    --glass-bg:    rgba(255,255,255,0.045);
+    --glass-border:rgba(255,255,255,0.10);
+    --glass-shine: rgba(255,255,255,0.07);
+    --accent-a:    #7c3aed;
+    --accent-b:    #2563eb;
+    --accent-c:    #06b6d4;
+    --op-glow:     rgba(124,58,237,0.55);
+    --eq-glow:     rgba(6,182,212,0.65);
+    --danger:      #ef4444;
+    --danger-glow: rgba(239,68,68,0.5);
+    --text-main:   #f1f5f9;
+    --text-dim:    rgba(241,245,249,0.38);
+    --text-ghost:  rgba(241,245,249,0.18);
+    --num-bg:      rgba(255,255,255,0.055);
+    --num-hover:   rgba(255,255,255,0.10);
+    --num-active:  rgba(255,255,255,0.04);
+    --radius-lg:   22px;
+    --radius-md:   16px;
+    --radius-sm:   12px;
+    --transition:  0.18s cubic-bezier(.4,0,.2,1);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg-deep);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── AMBIENT BACKGROUND ── */
+  .bg-orbs {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    overflow: hidden;
+  }
+  .orb {
+    position: absolute; border-radius: 50%;
+    filter: blur(90px); opacity: 0.28;
+    animation: drift 14s ease-in-out infinite alternate;
+  }
+  .orb-1 { width: 520px; height: 520px; background: radial-gradient(circle, #7c3aed, transparent 70%); top: -160px; left: -180px; animation-duration: 16s; }
+  .orb-2 { width: 420px; height: 420px; background: radial-gradient(circle, #2563eb, transparent 70%); bottom: -140px; right: -160px; animation-duration: 12s; animation-delay: -4s; }
+  .orb-3 { width: 300px; height: 300px; background: radial-gradient(circle, #06b6d4, transparent 70%); top: 40%; left: 50%; transform: translate(-50%,-50%); opacity: 0.16; animation-duration: 10s; animation-delay: -8s; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,20px) scale(1.08); } }
+
+  /* ── CALCULATOR SHELL ── */
+  .calc-wrap {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column; gap: 18px;
+    align-items: center;
+  }
+
+  .calc-label {
+    font-family: 'Syncopate', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--text-ghost);
+  }
+
+  .calc-body {
+    position: relative;
+    width: 360px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    padding: 22px 20px 24px;
+    backdrop-filter: blur(32px) saturate(160%);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04) inset,
+      0 40px 80px rgba(0,0,0,0.6),
+      0 2px 0 rgba(255,255,255,0.06) inset;
+    animation: floatIn 0.6s cubic-bezier(.2,1,.3,1) both;
+  }
+  @keyframes floatIn { from { opacity:0; transform: translateY(30px) scale(0.95); } to { opacity:1; transform: none; } }
+
+  /* top shine strip */
+  .calc-body::before {
+    content: '';
+    position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    border-radius: 50%;
+  }
+
+  /* ── DISPLAY ── */
+  .display {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 18px 20px 16px;
+    margin-bottom: 18px;
+    min-height: 110px;
+    display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3) inset;
+  }
+  .display::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.09), transparent);
+  }
+
+  .display-history {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px; font-weight: 300;
+    color: var(--text-dim);
+    min-height: 20px;
+    text-align: right;
+    transition: all var(--transition);
+    letter-spacing: 0.02em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .display-current {
+    font-family: 'DM Mono', monospace;
+    font-size: 44px; font-weight: 400;
+    color: var(--text-main);
+    text-align: right;
+    line-height: 1.1;
+    transition: all 0.15s ease;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%;
+    margin-top: 4px;
+    text-shadow: 0 0 40px rgba(124,58,237,0.25);
+  }
+  .display-current.small-text { font-size: 30px; }
+  .display-current.xs-text    { font-size: 22px; }
+
+  .display-cursor {
+    display: inline-block; width: 2px; height: 36px;
+    background: var(--accent-c); margin-left: 3px; vertical-align: middle;
+    border-radius: 2px;
+    animation: blink 1.1s step-start infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ── MODE ROW ── */
+  .mode-row {
+    display: flex; gap: 8px; margin-bottom: 14px;
+  }
+  .mode-btn {
+    flex: 1; padding: 7px 0; border: none; cursor: pointer;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; color: var(--text-dim);
+    font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    transition: all var(--transition);
+  }
+  .mode-btn:hover { background: rgba(255,255,255,0.09); color: var(--text-main); }
+  .mode-btn.active {
+    background: linear-gradient(135deg, rgba(124,58,237,0.35), rgba(37,99,235,0.35));
+    border-color: rgba(124,58,237,0.5);
+    color: var(--text-main);
+    box-shadow: 0 0 12px rgba(124,58,237,0.25);
+  }
+
+  /* ── BUTTON GRID ── */
+  .btn-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  /* ── BASE BUTTON ── */
+  .btn {
+    position: relative; overflow: hidden;
+    border: none; cursor: pointer; outline: none;
+    border-radius: var(--radius-md);
+    font-family: 'Outfit', sans-serif;
+    font-size: 17px; font-weight: 400;
+    height: 68px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 0.01em;
+  }
+  .btn::before {
+    content: '';
+    position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(160deg, rgba(255,255,255,0.10), transparent 60%);
+    pointer-events: none;
+  }
+  .btn:active { transform: scale(0.92); }
+  .btn:hover  { transform: scale(1.04); }
+
+  /* ripple */
+  .ripple {
+    position: absolute; border-radius: 50%;
+    transform: scale(0); animation: ripple-out 0.5s linear;
+    pointer-events: none; opacity: 0.35;
+  }
+  @keyframes ripple-out { to { transform: scale(4); opacity: 0; } }
+
+  /* NUMBER */
+  .btn-num {
+    background: var(--num-bg);
+    border: 1px solid rgba(255,255,255,0.07);
+    color: var(--text-main);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.05) inset;
+    font-weight: 300;
+    font-size: 20px;
+  }
+  .btn-num:hover {
+    background: var(--num-hover);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.07) inset;
+  }
+  .btn-num:active { background: var(--num-active); }
+
+  /* ZERO (wide) */
+  .btn-zero { grid-column: span 2; justify-content: flex-start; padding-left: 26px; font-size: 20px; }
+
+  /* OPERATOR */
+  .btn-op {
+    background: linear-gradient(145deg, rgba(124,58,237,0.22), rgba(37,99,235,0.22));
+    border: 1px solid rgba(124,58,237,0.35);
+    color: #c4b5fd;
+    box-shadow: 0 2px 14px rgba(124,58,237,0.2), 0 1px 0 rgba(255,255,255,0.05) inset;
+    font-size: 22px; font-weight: 300;
+  }
+  .btn-op:hover {
+    background: linear-gradient(145deg, rgba(124,58,237,0.38), rgba(37,99,235,0.38));
+    box-shadow: 0 4px 22px rgba(124,58,237,0.45), 0 0 0 1px rgba(124,58,237,0.5);
+    color: #ddd6fe;
+  }
+
+  /* EQUALS */
+  .btn-eq {
+    background: linear-gradient(135deg, #06b6d4, #3b82f6, #7c3aed);
+    background-size: 200% 200%;
+    animation: gradShift 4s ease infinite;
+    border: none;
+    color: #fff;
+    font-size: 22px; font-weight: 400;
+    box-shadow: 0 4px 24px var(--eq-glow), 0 1px 0 rgba(255,255,255,0.15) inset;
+  }
+  .btn-eq:hover {
+    box-shadow: 0 6px 36px var(--eq-glow), 0 0 0 1px rgba(6,182,212,0.6), 0 1px 0 rgba(255,255,255,0.15) inset;
+    transform: scale(1.06);
+  }
+  @keyframes gradShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+
+  /* CLEAR */
+  .btn-clear {
+    background: linear-gradient(145deg, rgba(239,68,68,0.18), rgba(239,68,68,0.10));
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+    box-shadow: 0 2px 12px rgba(239,68,68,0.15), 0 1px 0 rgba(255,255,255,0.05) inset;
+    font-size: 14px; font-weight: 500; letter-spacing: 0.03em;
+  }
+  .btn-clear:hover {
+    background: linear-gradient(145deg, rgba(239,68,68,0.32), rgba(239,68,68,0.22));
+    box-shadow: 0 4px 20px var(--danger-glow), 0 0 0 1px rgba(239,68,68,0.5);
+    color: #fecaca;
+  }
+
+  /* FUNCTION */
+  .btn-fn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.09);
+    color: var(--text-dim);
+    font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .btn-fn:hover {
+    background: rgba(255,255,255,0.11);
+    color: var(--text-main);
+  }
+
+  /* ── SCIENTIFIC ROW ── */
+  .sci-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s ease, margin 0.3s ease;
+  }
+  .sci-grid.open { max-height: 90px; opacity: 1; margin-bottom: 10px; }
+
+  /* ── HISTORY PANEL ── */
+  .history-panel {
+    position: absolute;
+    top: 0; right: -270px;
+    width: 250px; height: 100%;
+    background: rgba(7,9,15,0.85);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 22px;
+    backdrop-filter: blur(24px);
+    padding: 18px 16px;
+    display: flex; flex-direction: column;
+    transition: right 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s ease;
+    opacity: 0; pointer-events: none;
+    overflow: hidden;
+  }
+  .history-panel.open { right: -262px; opacity: 1; pointer-events: all; }
+  .history-title {
+    font-family: 'Syncopate', sans-serif;
+    font-size: 9px; letter-spacing: 0.3em; color: var(--text-ghost);
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+  .history-list {
+    flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 8px;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+  .history-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px; padding: 10px 12px;
+    cursor: pointer; transition: background var(--transition);
+  }
+  .history-item:hover { background: rgba(255,255,255,0.09); }
+  .history-expr { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); }
+  .history-result { font-family: 'DM Mono', monospace; font-size: 15px; color: var(--text-main); margin-top: 2px; }
+  .history-clear-btn {
+    margin-top: 12px; padding: 8px; border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 10px; background: rgba(239,68,68,0.08);
+    color: #fca5a5; font-family: 'Outfit', sans-serif; font-size: 12px;
+    cursor: pointer; transition: all var(--transition);
+  }
+  .history-clear-btn:hover { background: rgba(239,68,68,0.18); }
+
+  /* ── FOOTER ── */
+  .calc-footer {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; margin-top: 2px;
+  }
+  .footer-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.12); }
+  .footer-text { font-size: 10px; color: var(--text-ghost); letter-spacing: 0.12em; font-family: 'Syncopate', sans-serif; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: rgba(239,68,68,0.9); color: #fff;
+    padding: 10px 22px; border-radius: 50px;
+    font-size: 13px; letter-spacing: 0.03em;
+    opacity: 0; pointer-events: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 440px) {
+    .calc-body { width: calc(100vw - 32px); }
+    .display-current { font-size: 36px; }
+    .btn { height: 60px; }
+    .history-panel.open { right: -220px; }
+  }
+
+  /* ── LIGHT MODE ── */
+  body.light {
+    background: #eef2f7;
+  }
+  body.light .bg-orbs { opacity: 0.12; }
+  body.light .calc-body {
+    background: rgba(255,255,255,0.65);
+    border-color: rgba(0,0,0,0.08);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 2px 0 rgba(255,255,255,0.9) inset;
+  }
+  body.light .display { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.08); }
+  body.light .display-current { color: #1e293b; text-shadow: none; }
+  body.light .display-history { color: rgba(30,41,59,0.5); }
+  body.light .btn-num {
+    background: rgba(255,255,255,0.8); border-color: rgba(0,0,0,0.08); color: #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  body.light .btn-num:hover { background: rgba(255,255,255,1); }
+  body.light .btn-fn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.07); color: #475569; }
+  body.light .btn-fn:hover { background: rgba(0,0,0,0.09); color: #1e293b; }
+  body.light .mode-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.07); color: #64748b; }
+  body.light .mode-btn:hover { background: rgba(0,0,0,0.08); color: #1e293b; }
+  body.light .history-panel { background: rgba(240,245,255,0.92); border-color: rgba(0,0,0,0.08); }
+  body.light .history-item { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.07); }
+  body.light .history-expr { color: rgba(30,41,59,0.5); }
+  body.light .history-result { color: #1e293b; }
+  body.light .calc-label { color: rgba(30,41,59,0.3); }
+  body.light .footer-text { color: rgba(30,41,59,0.25); }
+  body.light .footer-dot { background: rgba(30,41,59,0.15); }
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div class="calc-wrap">
+  <div class="calc-label">Calcvlvs Pro</div>
+
+  <div class="calc-body" id="calcBody">
+
+    <!-- History Panel -->
+    <div class="history-panel" id="histPanel">
+      <div class="history-title">History</div>
+      <div class="history-list" id="histList"></div>
+      <button class="history-clear-btn" onclick="clearHistory()">Clear History</button>
+    </div>
+
+    <!-- Display -->
+    <div class="display">
+      <div class="display-history" id="dispHistory"></div>
+      <div class="display-current" id="dispCurrent">0<span class="display-cursor" id="cursor"></span></div>
+    </div>
+
+    <!-- Mode Row -->
+    <div class="mode-row">
+      <button class="mode-btn active" id="btnStd" onclick="setMode('std')">Standard</button>
+      <button class="mode-btn" id="btnSci" onclick="setMode('sci')">Scientific</button>
+      <button class="mode-btn" id="btnHist" onclick="toggleHistory()">History</button>
+      <button class="mode-btn" id="btnTheme" onclick="toggleTheme()">🌙</button>
+    </div>
+
+    <!-- Scientific Grid -->
+    <div class="sci-grid" id="sciGrid">
+      <button class="btn btn-fn" onclick="pressSci(this,'sin')">sin</button>
+      <button class="btn btn-fn" onclick="pressSci(this,'cos')">cos</button>
+      <button class="btn btn-fn" onclick="pressSci(this,'tan')">tan</button>
+      <button class="btn btn-fn" onclick="pressSci(this,'log')">log</button>
+      <button class="btn btn-fn" onclick="pressSci(this,'sqrt')">√</button>
+      <button class="btn btn-fn" onclick="pressSci(this,'pi')">π</button>
+      <button class="btn btn-fn" onclick="pressSci(this,'e')">e</button>
+      <button class="btn btn-fn" onclick="pressSci(this,'pow')">xʸ</button>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="btn-grid" id="mainGrid">
+      <button class="btn btn-clear"  onclick="pressBtn(this,'clear')">AC</button>
+      <button class="btn btn-fn"     onclick="pressBtn(this,'sign')">+/−</button>
+      <button class="btn btn-fn"     onclick="pressBtn(this,'percent')">%</button>
+      <button class="btn btn-op"     onclick="pressBtn(this,'op','÷')">÷</button>
+
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','7')">7</button>
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','8')">8</button>
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','9')">9</button>
+      <button class="btn btn-op"     onclick="pressBtn(this,'op','×')">×</button>
+
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','4')">4</button>
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','5')">5</button>
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','6')">6</button>
+      <button class="btn btn-op"     onclick="pressBtn(this,'op','−')">−</button>
+
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','1')">1</button>
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','2')">2</button>
+      <button class="btn btn-num"    onclick="pressBtn(this,'num','3')">3</button>
+      <button class="btn btn-op"     onclick="pressBtn(this,'op','+')">+</button>
+
+      <button class="btn btn-num btn-zero" onclick="pressBtn(this,'num','0')">0</button>
+      <button class="btn btn-num"    onclick="pressBtn(this,'decimal')">.</button>
+      <button class="btn btn-eq"     onclick="pressBtn(this,'equals')">=</button>
+    </div>
+  </div>
+
+  <div class="calc-footer">
+    <div class="footer-dot"></div>
+    <div class="footer-text">Premium Edition</div>
+    <div class="footer-dot"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let state = {
+  current: '0',
+  previous: '',
+  operator: null,
+  operand: null,
+  justEvaluated: false,
+  history: [],
+  mode: 'std',
+  darkMode: true,
+};
+
+// ── DISPLAY ──
+const dispCurrent = document.getElementById('dispCurrent');
+const dispHistory  = document.getElementById('dispHistory');
+const cursor = document.getElementById('cursor');
+
+function updateDisplay() {
+  const val = state.current;
+  // Auto-size
+  dispCurrent.classList.remove('small-text','xs-text');
+  if (val.length > 12) dispCurrent.classList.add('xs-text');
+  else if (val.length > 8) dispCurrent.classList.add('small-text');
+
+  // Rebuild with cursor
+  dispCurrent.innerHTML = escapeHtml(formatNum(val)) + '<span class="display-cursor"></span>';
+  dispHistory.textContent = state.previous ? state.previous + (state.operator ? ' ' + state.operator : '') : '';
+}
+
+function formatNum(str) {
+  // Don't format if has operators / sci notation in progress
+  if (/[+\-×÷(]/.test(str)) return str;
+  const [int, dec] = str.split('.');
+  const fmt = int === '-' ? '-' : Number(int).toLocaleString('en');
+  return dec !== undefined ? fmt + '.' + dec : fmt;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── LOGIC ──
+function pressBtn(el, type, val) {
+  rippleEffect(el);
+  clickSound();
+
+  switch(type) {
+    case 'num':     inputNum(val); break;
+    case 'op':      inputOp(val); break;
+    case 'equals':  evaluate(); break;
+    case 'clear':   clearAll(); break;
+    case 'sign':    toggleSign(); break;
+    case 'percent': doPercent(); break;
+    case 'decimal': inputDecimal(); break;
+  }
+  updateDisplay();
+}
+
+function inputNum(d) {
+  if (state.justEvaluated) { state.current = d; state.justEvaluated = false; return; }
+  if (state.current === '0') state.current = d;
+  else state.current += d;
+  if (state.current.length > 16) state.current = state.current.slice(0,-1);
+}
+
+function inputOp(op) {
+  if (state.operator && !state.justEvaluated) {
+    compute();
+  }
+  state.operand = parseFloat(state.current.replace(/,/g,''));
+  state.operator = op;
+  state.previous = state.current;
+  state.current = '0';
+  state.justEvaluated = false;
+}
+
+function evaluate() {
+  if (!state.operator || state.operand === null) return;
+  const opLabel = state.operator === '^' ? '^' : state.operator;
+  const expr = state.previous + ' ' + opLabel + ' ' + state.current;
+  compute();
+  saveHistory(expr, state.current);
+  state.operator = null;
+  state.operand = null;
+  state.justEvaluated = true;
+}
+
+function compute() {
+  const a = state.operand;
+  const b = parseFloat(state.current.replace(/,/g,''));
+  let result;
+  switch(state.operator) {
+    case '+': result = a + b; break;
+    case '−': result = a - b; break;
+    case '×': result = a * b; break;
+    case '÷':
+      if (b === 0) { showToast('Cannot divide by zero'); state.current = 'Error'; return; }
+      result = a / b; break;
+    case '^':
+      result = Math.pow(a, b); break;
+    default: return;
+  }
+  // Round floating point noise
+  result = parseFloat(result.toPrecision(12));
+  state.current = String(result);
+  state.previous = '';
+}
+
+function clearAll() {
+  state.current = '0'; state.previous = '';
+  state.operator = null; state.operand = null; state.justEvaluated = false;
+}
+
+function toggleSign() {
+  if (state.current === '0') return;
+  state.current = state.current.startsWith('-') ? state.current.slice(1) : '-' + state.current;
+}
+
+function doPercent() {
+  const v = parseFloat(state.current);
+  if (state.operand !== null) state.current = String((state.operand * v) / 100);
+  else state.current = String(v / 100);
+}
+
+function inputDecimal() {
+  if (state.justEvaluated) { state.current = '0.'; state.justEvaluated = false; return; }
+  if (!state.current.includes('.')) state.current += '.';
+}
+
+function pressSci(el, fn) {
+  rippleEffect(el);
+  clickSound();
+
+  const num = parseFloat(state.current);
+  let result, expr;
+
+  switch(fn) {
+    case 'sin':
+      expr = 'sin(' + state.current + '°)';
+      result = Math.sin(num * Math.PI / 180);
+      break;
+    case 'cos':
+      expr = 'cos(' + state.current + '°)';
+      result = Math.cos(num * Math.PI / 180);
+      break;
+    case 'tan':
+      expr = 'tan(' + state.current + '°)';
+      result = Math.tan(num * Math.PI / 180);
+      break;
+    case 'log':
+      if (num <= 0) { showToast('log of non-positive number'); return; }
+      expr = 'log(' + state.current + ')';
+      result = Math.log10(num);
+      break;
+    case 'sqrt':
+      if (num < 0) { showToast('√ of negative number'); return; }
+      expr = '√(' + state.current + ')';
+      result = Math.sqrt(num);
+      break;
+    case 'pi':
+      expr = 'π';
+      result = Math.PI;
+      break;
+    case 'e':
+      expr = 'e';
+      result = Math.E;
+      break;
+    case 'pow':
+      // xʸ: store current as operand, wait for exponent input
+      state.operand = num;
+      state.operator = '^';
+      state.previous = state.current;
+      state.current = '0';
+      state.justEvaluated = false;
+      updateDisplay();
+      return;
+    default: return;
+  }
+
+  if (isNaN(result) || !isFinite(result)) {
+    showToast('Math error');
+    state.current = 'Error';
+    updateDisplay();
+    return;
+  }
+
+  const rounded = parseFloat(result.toPrecision(10));
+  saveHistory(expr, String(rounded));
+  state.previous = expr;
+  state.current = String(rounded);
+  state.justEvaluated = true;
+  updateDisplay();
+}
+
+// ── HISTORY ──
+function saveHistory(expr, result) {
+  state.history.unshift({ expr, result });
+  if (state.history.length > 30) state.history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('histList');
+  list.innerHTML = state.history.map((h,i) =>
+    `<div class="history-item" onclick="recallHistory(${i})">
+      <div class="history-expr">${escapeHtml(h.expr)}</div>
+      <div class="history-result">${escapeHtml(formatNum(h.result))}</div>
+    </div>`
+  ).join('');
+}
+
+function recallHistory(i) {
+  state.current = state.history[i].result;
+  state.justEvaluated = true;
+  updateDisplay();
+}
+
+function clearHistory() {
+  state.history = [];
+  renderHistory();
+}
+
+// ── TOGGLE ──
+function toggleHistory() {
+  const panel = document.getElementById('histPanel');
+  panel.classList.toggle('open');
+  document.getElementById('btnHist').classList.toggle('active');
+}
+
+function setMode(m) {
+  state.mode = m;
+  document.getElementById('btnStd').classList.toggle('active', m==='std');
+  document.getElementById('btnSci').classList.toggle('active', m==='sci');
+  document.getElementById('sciGrid').classList.toggle('open', m==='sci');
+}
+
+function toggleTheme() {
+  state.darkMode = !state.darkMode;
+  document.body.classList.toggle('light', !state.darkMode);
+  document.getElementById('btnTheme').textContent = state.darkMode ? '🌙' : '☀️';
+}
+
+// ── EFFECTS ──
+function rippleEffect(el) {
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const size = Math.max(el.offsetWidth, el.offsetHeight);
+  r.style.cssText = `width:${size}px;height:${size}px;left:${el.offsetWidth/2 - size/2}px;top:${el.offsetHeight/2 - size/2}px;background:rgba(255,255,255,0.3);`;
+  el.appendChild(r);
+  r.addEventListener('animationend', () => r.remove());
+}
+
+// AudioContext click sound
+let audioCtx;
+function clickSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(0.06, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    o.start(); o.stop(audioCtx.currentTime + 0.08);
+  } catch {}
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown', e => {
+  const key = e.key;
+  if (key >= '0' && key <= '9') { pressBtn(document.querySelector('.btn-num'), 'num', key); return; }
+  const map = {
+    '+': '+', '-': '−', '*': '×', '/': '÷',
+    'Enter': 'equals', '=': 'equals',
+    'Escape': 'clear', 'Backspace': 'backspace',
+    '.': 'decimal', '%': 'percent',
+  };
+  if (map[key]) {
+    if (map[key] === 'backspace') {
+      if (state.current.length > 1) state.current = state.current.slice(0,-1);
+      else state.current = '0';
+      updateDisplay(); return;
+    }
+    if (['equals','clear','decimal','percent'].includes(map[key])) {
+      pressBtn(document.querySelector('.btn-eq') || document.querySelector('.btn-clear'), map[key]);
+    } else {
+      pressBtn(document.querySelector('.btn-op'), 'op', map[key]);
+    }
+  }
+});
+
+// ── INIT ──
+updateDisplay();
+</script>
+</body>
+</html>
