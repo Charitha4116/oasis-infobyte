@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Auth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --void: #050508;
+    --deep: #080b14;
+    --ink: #0d1220;
+    --violet: #6c3fd6;
+    --violet-bright: #8b5cf6;
+    --violet-glow: rgba(108,63,214,0.35);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34,211,238,0.25);
+    --rose: #f43f5e;
+    --text-primary: #f0f4ff;
+    --text-secondary: rgba(200,210,240,0.65);
+    --text-muted: rgba(150,165,200,0.45);
+    --glass-bg: rgba(13,18,32,0.6);
+    --glass-border: rgba(139,92,246,0.2);
+    --input-bg: rgba(8,11,20,0.7);
+    --radius: 20px;
+    --radius-sm: 12px;
+    --blur: blur(24px);
+  }
+
+  html { height: 100%; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--void);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── CANVAS BACKGROUND ── */
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── GRADIENT ORBS ── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 0;
+    animation: orb-drift 12s ease-in-out infinite alternate;
+  }
+  .orb-1 { width: 520px; height: 520px; background: radial-gradient(circle, #4c1d95 0%, transparent 70%); top: -120px; left: -80px; animation-delay: 0s; }
+  .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, #0e7490 0%, transparent 70%); bottom: -100px; right: -60px; animation-delay: -4s; }
+  .orb-3 { width: 280px; height: 280px; background: radial-gradient(circle, #7c3aed 0%, transparent 70%); top: 40%; left: 55%; animation-delay: -7s; opacity: 0.3; }
+
+  @keyframes orb-drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(30px, 20px) scale(1.08); }
+  }
+
+  /* ── PAGE WRAPPER ── */
+  #auth-page, #dash-page {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #dash-page { display: none; }
+
+  /* ── CARD ── */
+  .card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 44px 40px 40px;
+    box-shadow:
+      0 0 60px rgba(108,63,214,0.12),
+      0 32px 80px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+    animation: card-in 0.7s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(32px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── LOGO ── */
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--violet-bright) 0%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+    display: inline-block;
+  }
+  .tagline {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    margin-bottom: 32px;
+    font-weight: 300;
+  }
+
+  /* ── TAB TOGGLE ── */
+  .tab-row {
+    display: flex;
+    background: rgba(8,11,20,0.8);
+    border-radius: 50px;
+    padding: 4px;
+    margin-bottom: 32px;
+    border: 1px solid rgba(139,92,246,0.15);
+    position: relative;
+  }
+  .tab-pill {
+    position: absolute;
+    height: calc(100% - 8px);
+    top: 4px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, var(--violet) 0%, #4338ca 100%);
+    box-shadow: 0 0 20px rgba(108,63,214,0.5);
+    transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 1;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+    transition: color 0.3s;
+    position: relative;
+    z-index: 2;
+    border-radius: 50px;
+  }
+  .tab-btn.active { color: var(--text-primary); }
+
+  /* ── FORMS ── */
+  .forms-wrap { position: relative; overflow: hidden; }
+  .form-panel {
+    transition: all 0.5s cubic-bezier(0.77,0,0.175,1);
+    width: 100%;
+  }
+  .form-panel.hidden-left  { opacity: 0; transform: translateX(-40px) scale(0.97); position: absolute; top: 0; pointer-events: none; }
+  .form-panel.hidden-right { opacity: 0; transform: translateX(40px) scale(0.97); position: absolute; top: 0; pointer-events: none; }
+  .form-panel.visible { opacity: 1; transform: translateX(0) scale(1); position: relative; }
+
+  /* ── INPUT GROUP ── */
+  .field {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .field-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    transition: color 0.3s;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .field input {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: var(--radius-sm);
+    padding: 20px 16px 8px 44px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    -webkit-autofill: none;
+  }
+  .field input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 100px #0d1220 inset;
+    -webkit-text-fill-color: var(--text-primary);
+  }
+  .field label {
+    position: absolute;
+    left: 44px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  .field input:focus + label,
+  .field input:not(:placeholder-shown) + label {
+    top: 10px;
+    transform: translateY(0);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--violet-bright);
+    font-weight: 500;
+  }
+  .field input:focus {
+    border-color: var(--violet-bright);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.12);
+  }
+  .field input:focus ~ .field-icon { color: var(--violet-bright); }
+
+  /* Password toggle */
+  .eye-btn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    z-index: 3;
+    transition: color 0.3s;
+  }
+  .eye-btn:hover { color: var(--violet-bright); }
+
+  /* ── FORGOT ── */
+  .forgot {
+    text-align: right;
+    margin-top: -10px;
+    margin-bottom: 24px;
+  }
+  .forgot a {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .forgot a:hover { color: var(--cyan); }
+
+  /* ── BUTTON ── */
+  .btn-primary {
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fff;
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--violet) 0%, #4338ca 50%, #0e7490 100%);
+    background-size: 200% 200%;
+    background-position: 0% 50%;
+    box-shadow: 0 4px 30px rgba(108,63,214,0.4);
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, background-position 0.5s;
+    position: relative;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: inherit;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 40px rgba(108,63,214,0.6), 0 0 60px rgba(139,92,246,0.2);
+    background-position: 100% 50%;
+  }
+  .btn-primary:hover::after { opacity: 1; }
+  .btn-primary:active { transform: translateY(0) scale(0.99); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139,92,246,0.25), transparent);
+  }
+
+  /* ── SOCIAL ── */
+  .social-row { display: flex; gap: 12px; }
+  .btn-social {
+    flex: 1;
+    background: rgba(8,11,20,0.8);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.25s;
+    letter-spacing: 0.02em;
+  }
+  .btn-social:hover {
+    border-color: var(--violet-bright);
+    background: rgba(139,92,246,0.1);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+  }
+  .btn-social svg { width: 16px; height: 16px; }
+
+  /* ── TERMS ── */
+  .field-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .field-check input[type=checkbox] { display: none; }
+  .check-box {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border: 1px solid rgba(139,92,246,0.35);
+    border-radius: 5px;
+    background: var(--input-bg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+    transition: all 0.2s;
+  }
+  .check-box.checked {
+    background: linear-gradient(135deg, var(--violet), #4338ca);
+    border-color: var(--violet);
+    box-shadow: 0 0 12px rgba(139,92,246,0.4);
+  }
+  .check-box svg { width: 10px; height: 10px; opacity: 0; transition: opacity 0.2s; }
+  .check-box.checked svg { opacity: 1; }
+  .check-label { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+  .check-label a { color: var(--violet-bright); text-decoration: none; }
+  .check-label a:hover { color: var(--cyan); }
+
+  /* ── ERROR / SUCCESS ── */
+  .msg {
+    font-size: 12.5px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: none;
+    letter-spacing: 0.02em;
+    animation: msg-in 0.3s ease both;
+  }
+  .msg.error { background: rgba(244,63,94,0.12); border: 1px solid rgba(244,63,94,0.3); color: #fb7185; }
+  .msg.success { background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.3); color: var(--cyan); }
+  .msg.show { display: block; }
+  @keyframes msg-in { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ══════════════════════════════════
+     DASHBOARD PAGE
+  ══════════════════════════════════ */
+  .dash-card {
+    width: 100%;
+    max-width: 640px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 48px 44px;
+    box-shadow:
+      0 0 80px rgba(108,63,214,0.15),
+      0 32px 80px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+    animation: card-in 0.7s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  .dash-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+  .dash-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: 0.18em; text-transform: uppercase; background: linear-gradient(135deg, var(--violet-bright), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  .btn-logout {
+    background: rgba(244,63,94,0.1);
+    border: 1px solid rgba(244,63,94,0.3);
+    border-radius: 50px;
+    padding: 9px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fb7185;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .btn-logout:hover {
+    background: rgba(244,63,94,0.18);
+    border-color: rgba(244,63,94,0.6);
+    box-shadow: 0 0 24px rgba(244,63,94,0.3);
+    transform: scale(1.04);
+  }
+
+  /* Avatar */
+  .profile-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+    background: rgba(8,11,20,0.6);
+    border: 1px solid rgba(139,92,246,0.15);
+    border-radius: 16px;
+    margin-bottom: 28px;
+  }
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--violet), #4338ca, #0e7490);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: #fff;
+    box-shadow: 0 0 28px rgba(139,92,246,0.5);
+    flex-shrink: 0;
+    position: relative;
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 28px rgba(139,92,246,0.5); }
+    50%       { box-shadow: 0 0 40px rgba(139,92,246,0.8), 0 0 60px rgba(139,92,246,0.3); }
+  }
+  .avatar-online {
+    position: absolute;
+    width: 14px; height: 14px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: 2px solid var(--deep);
+    bottom: 2px; right: 2px;
+    box-shadow: 0 0 8px rgba(34,197,94,0.6);
+  }
+  .profile-info {}
+  .profile-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .profile-email { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+  .profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(139,92,246,0.15);
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 50px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--violet-bright);
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+
+  /* Stats */
+  .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-card {
+    background: rgba(8,11,20,0.6);
+    border: 1px solid rgba(139,92,246,0.12);
+    border-radius: 14px;
+    padding: 18px 16px;
+    text-align: center;
+    transition: border-color 0.3s, transform 0.3s;
+    cursor: default;
+  }
+  .stat-card:hover { border-color: rgba(139,92,246,0.35); transform: translateY(-2px); }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    background: linear-gradient(135deg, var(--violet-bright), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* Welcome */
+  .welcome-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .welcome-text span { background: linear-gradient(135deg, var(--violet-bright), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .welcome-sub { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; }
+
+  /* Activity */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .activity-list { display: flex; flex-direction: column; gap: 10px; }
+  .activity-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(8,11,20,0.5);
+    border: 1px solid rgba(139,92,246,0.1);
+    border-radius: 10px;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .activity-item:hover { border-color: rgba(139,92,246,0.25); background: rgba(139,92,246,0.05); }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-violet { background: var(--violet-bright); box-shadow: 0 0 8px rgba(139,92,246,0.6); }
+  .dot-cyan   { background: var(--cyan); box-shadow: 0 0 8px rgba(34,211,238,0.6); }
+  .dot-rose   { background: var(--rose); box-shadow: 0 0 8px rgba(244,63,94,0.6); }
+  .activity-text { flex: 1; font-size: 13.5px; color: var(--text-secondary); }
+  .activity-time { font-size: 11px; color: var(--text-muted); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 520px) {
+    .card { padding: 32px 24px 28px; }
+    .dash-card { padding: 32px 24px; }
+    .stats-row { grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .stat-card { padding: 14px 8px; }
+    .stat-num { font-size: 20px; }
+    .welcome-text { font-size: 22px; }
+    .social-row { flex-direction: column; }
+  }
+
+  /* Loading shimmer on btn */
+  .btn-primary.loading { pointer-events: none; }
+  .btn-primary.loading::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
+    animation: shimmer 1.2s ease-in-out infinite;
+  }
+  @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+</style>
+</head>
+<body>
+
+<!-- Particle canvas -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Gradient orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ══ AUTH PAGE ══ -->
+<div id="auth-page">
+  <div class="card">
+    <div class="logo">NEXUS</div>
+    <div class="tagline">Your portal to the future</div>
+
+    <!-- Tabs -->
+    <div class="tab-row" id="tab-row">
+      <div class="tab-pill" id="tab-pill"></div>
+      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- Message -->
+    <div class="msg" id="auth-msg"></div>
+
+    <div class="forms-wrap">
+      <!-- LOGIN FORM -->
+      <div class="form-panel visible" id="panel-login">
+        <div class="field">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="email" id="login-email" placeholder=" " autocomplete="email">
+          <label>Email address</label>
+        </div>
+        <div class="field">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" id="login-pass" placeholder=" " autocomplete="current-password">
+          <label>Password</label>
+          <button class="eye-btn" onclick="togglePass('login-pass',this)" tabindex="-1">
+            <svg id="eye-login" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="forgot"><a href="#">Forgot password?</a></div>
+        <button class="btn-primary" onclick="doLogin()">Enter the Portal</button>
+        <div class="divider">or continue with</div>
+        <div class="social-row">
+          <button class="btn-social" onclick="socialLogin('Google')">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Google
+          </button>
+          <button class="btn-social" onclick="socialLogin('GitHub')">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </button>
+        </div>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <div class="form-panel hidden-right" id="panel-signup">
+        <div class="field">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="signup-name" placeholder=" " autocomplete="name">
+          <label>Full name</label>
+        </div>
+        <div class="field">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" id="signup-email" placeholder=" " autocomplete="email">
+          <label>Email address</label>
+        </div>
+        <div class="field">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" id="signup-pass" placeholder=" " autocomplete="new-password">
+          <label>Password</label>
+          <button class="eye-btn" onclick="togglePass('signup-pass',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="field-check">
+          <div class="check-box" id="terms-check" onclick="toggleCheck()">
+            <svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2"><polyline points="2,6 5,9 10,3"/></svg>
+          </div>
+          <label class="check-label" for="terms-input">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        </div>
+        <button class="btn-primary" onclick="doSignup()">Create Account</button>
+        <div class="divider">or continue with</div>
+        <div class="social-row">
+          <button class="btn-social" onclick="socialLogin('Google')">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Google
+          </button>
+          <button class="btn-social" onclick="socialLogin('GitHub')">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD PAGE ══ -->
+<div id="dash-page">
+  <div class="dash-card">
+    <div class="dash-top">
+      <div class="dash-logo">NEXUS</div>
+      <button class="btn-logout" onclick="doLogout()">⏻ Logout</button>
+    </div>
+
+    <div class="welcome-text">Welcome back, <span id="dash-name">User</span> 👋</div>
+    <div class="welcome-sub">Your secure dashboard is active. All systems operational and running at full capacity.</div>
+
+    <div class="profile-row">
+      <div class="avatar" id="dash-avatar">
+        U
+        <div class="avatar-online"></div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="dash-fullname">User Name</div>
+        <div class="profile-email" id="dash-email">user@email.com</div>
+        <div class="profile-badge">
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="4"/></svg>
+          Active Member
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-sessions">1</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">99</div>
+        <div class="stat-label">Uptime %</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">∞</div>
+        <div class="stat-label">Access</div>
+      </div>
+    </div>
+
+    <div class="section-label">Recent Activity</div>
+    <div class="activity-list">
+      <div class="activity-item">
+        <div class="activity-dot dot-violet"></div>
+        <div class="activity-text">Authenticated successfully via Nexus portal</div>
+        <div class="activity-time">Just now</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot dot-cyan"></div>
+        <div class="activity-text">Security scan completed — no threats detected</div>
+        <div class="activity-time">1m ago</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot dot-rose"></div>
+        <div class="activity-text">New device fingerprint registered</div>
+        <div class="activity-time">2m ago</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── STATE ── */
+  let currentTab = 'login';
+  let termsChecked = false;
+  let users = JSON.parse(localStorage.getItem('nx_users') || '{}');
+  let session = JSON.parse(localStorage.getItem('nx_session') || 'null');
+
+  /* ── PARTICLE CANVAS ── */
+  (function() {
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function Particle() {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.vx = (Math.random() - 0.5) * 0.25;
+      this.vy = (Math.random() - 0.5) * 0.25;
+      this.r = Math.random() * 1.2 + 0.3;
+      this.alpha = Math.random() * 0.5 + 0.1;
+      this.color = Math.random() > 0.5 ? '139,92,246' : '34,211,238';
+    }
+    Particle.prototype.update = function() {
+      this.x += this.vx; this.y += this.vy;
+      if (this.x < 0) this.x = W;
+      if (this.x > W) this.x = 0;
+      if (this.y < 0) this.y = H;
+      if (this.y > H) this.y = 0;
+    };
+
+    for (let i = 0; i < 90; i++) particles.push(new Particle());
+
+    function connect() {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(139,92,246,${0.08 * (1 - dist/100)})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach(p => {
+        p.update();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
+        ctx.fill();
+      });
+      connect();
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  /* ── TAB SWITCH ── */
+  function switchTab(tab) {
+    if (tab === currentTab) return;
+    const pill = document.getElementById('tab-pill');
+    const loginBtn = document.getElementById('tab-login');
+    const signupBtn = document.getElementById('tab-signup');
+    const loginPanel = document.getElementById('panel-login');
+    const signupPanel = document.getElementById('panel-signup');
+
+    currentTab = tab;
+    clearMsg();
+
+    if (tab === 'login') {
+      pill.style.left = '4px'; pill.style.width = loginBtn.offsetWidth + 'px';
+      loginBtn.classList.add('active'); signupBtn.classList.remove('active');
+      loginPanel.classList.remove('hidden-left'); loginPanel.classList.add('visible');
+      signupPanel.classList.remove('visible'); signupPanel.classList.add('hidden-right');
+    } else {
+      pill.style.left = loginBtn.offsetWidth + 4 + 'px'; pill.style.width = signupBtn.offsetWidth + 'px';
+      signupBtn.classList.add('active'); loginBtn.classList.remove('active');
+      signupPanel.classList.remove('hidden-right'); signupPanel.classList.add('visible');
+      loginPanel.classList.remove('visible'); loginPanel.classList.add('hidden-left');
+    }
+  }
+
+  /* init pill position */
+  window.addEventListener('load', () => {
+    const loginBtn = document.getElementById('tab-login');
+    const pill = document.getElementById('tab-pill');
+    pill.style.left = '4px';
+    pill.style.width = loginBtn.offsetWidth + 'px';
+    // Auto-restore session
+    if (session) showDashboard(session);
+  });
+
+  /* ── TOGGLE PASSWORD ── */
+  function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.style.color = show ? 'var(--violet-bright)' : '';
+  }
+
+  /* ── TERMS CHECKBOX ── */
+  function toggleCheck() {
+    termsChecked = !termsChecked;
+    const box = document.getElementById('terms-check');
+    box.classList.toggle('checked', termsChecked);
+  }
+
+  /* ── MESSAGES ── */
+  function showMsg(text, type) {
+    const el = document.getElementById('auth-msg');
+    el.textContent = text;
+    el.className = `msg ${type} show`;
+  }
+  function clearMsg() {
+    const el = document.getElementById('auth-msg');
+    el.className = 'msg';
+  }
+
+  /* ── LOGIN ── */
+  function doLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-pass').value;
+    if (!email || !pass) { showMsg('Please fill in all fields.', 'error'); return; }
+    if (!users[email]) { showMsg('No account found. Please sign up first.', 'error'); return; }
+    if (users[email].pass !== btoa(pass)) { showMsg('Incorrect password. Try again.', 'error'); return; }
+
+    const btn = document.querySelector('#panel-login .btn-primary');
+    btn.classList.add('loading');
+    btn.textContent = 'Authenticating...';
+    setTimeout(() => {
+      btn.classList.remove('loading');
+      btn.textContent = 'Enter the Portal';
+      const userData = { name: users[email].name, email };
+      localStorage.setItem('nx_session', JSON.stringify(userData));
+      session = userData;
+      showDashboard(userData);
+    }, 1200);
+  }
+
+  /* ── SIGNUP ── */
+  function doSignup() {
+    const name  = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const pass  = document.getElementById('signup-pass').value;
+    if (!name || !email || !pass) { showMsg('Please fill in all fields.', 'error'); return; }
+    if (!email.includes('@')) { showMsg('Enter a valid email address.', 'error'); return; }
+    if (pass.length < 6) { showMsg('Password must be at least 6 characters.', 'error'); return; }
+    if (!termsChecked) { showMsg('Please accept the Terms of Service.', 'error'); return; }
+    if (users[email]) { showMsg('Account already exists. Sign in instead.', 'error'); return; }
+
+    const btn = document.querySelector('#panel-signup .btn-primary');
+    btn.classList.add('loading');
+    btn.textContent = 'Creating account...';
+    setTimeout(() => {
+      btn.classList.remove('loading');
+      btn.textContent = 'Create Account';
+      users[email] = { name, pass: btoa(pass) };
+      localStorage.setItem('nx_users', JSON.stringify(users));
+      showMsg('Account created! Signing you in…', 'success');
+      setTimeout(() => {
+        const userData = { name, email };
+        localStorage.setItem('nx_session', JSON.stringify(userData));
+        session = userData;
+        showDashboard(userData);
+      }, 800);
+    }, 1200);
+  }
+
+  /* ── SOCIAL (demo) ── */
+  function socialLogin(provider) {
+    const userData = { name: `${provider} User`, email: `user@${provider.toLowerCase()}.com` };
+    localStorage.setItem('nx_session', JSON.stringify(userData));
+    session = userData;
+    showDashboard(userData);
+  }
+
+  /* ── SHOW DASHBOARD ── */
+  function showDashboard(user) {
+    document.getElementById('auth-page').style.display = 'none';
+    const dash = document.getElementById('dash-page');
+    dash.style.display = 'flex';
+
+    const firstName = user.name.split(' ')[0];
+    const initials  = user.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+
+    document.getElementById('dash-name').textContent = firstName;
+    document.getElementById('dash-fullname').textContent = user.name;
+    document.getElementById('dash-email').textContent = user.email;
+    document.getElementById('dash-avatar').innerHTML = initials + '<div class="avatar-online"></div>';
+
+    const sessions = parseInt(localStorage.getItem('nx_sessions') || '0') + 1;
+    localStorage.setItem('nx_sessions', sessions);
+    document.getElementById('stat-sessions').textContent = sessions;
+  }
+
+  /* ── LOGOUT ── */
+  function doLogout() {
+    localStorage.removeItem('nx_session');
+    session = null;
+    const dash = document.getElementById('dash-page');
+    dash.style.opacity = '0';
+    dash.style.transform = 'scale(0.97)';
+    dash.style.transition = 'all 0.4s ease';
+    setTimeout(() => {
+      dash.style.display = 'none';
+      dash.style.opacity = '';
+      dash.style.transform = '';
+      dash.style.transition = '';
+      const auth = document.getElementById('auth-page');
+      auth.style.display = 'flex';
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-pass').value = '';
+      clearMsg();
+      if (currentTab !== 'login') switchTab('login');
+    }, 400);
+  }
+</script>
+</body>
+</html>
